@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "shader.h"
+#include "camera.h"
 
 int main() {
 
@@ -22,7 +23,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(640, 480, "Hello Triangle", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "Hello Triangle", NULL, NULL);
     if (!window) {
         fprintf(stderr, "ERROR: could not open window with GLFW3\n");
         glfwTerminate();
@@ -42,9 +43,7 @@ int main() {
 
     glDepthFunc(GL_LESS);
 
-    // Shader
 
-    Shader* TrinagleShader = new Shader("triangle.vs","triangle.fs");
 
     // Geometry
 
@@ -66,21 +65,40 @@ int main() {
    
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
+    // Camera
+
+    Camera* camera = new Camera();
+    camera->horizontalAngle = glm::pi<float>(); // Looking in -Z direction.
+    camera->position = glm::vec3(0.0f, 0.0f, 5.0f);
+
+    // Shader
+
+    TriangleShader* trinagleShader = new TriangleShader();
    
     // Rendering
-   
-    TrinagleShader->EnableShader();
 
-    while (!glfwWindowShouldClose(window)) {
-       
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glfwPollEvents();
+
+        camera->OnRender(window);
+        glm::mat4 model = glm::mat4(1.0f); // identity matrix
+        glm::mat4 view = camera->GetViewMatrix();
+        glm::mat4 projection = camera->GetProjectionMatrix();
+        glm::mat4 MVP = projection * view * model;
+        trinagleShader->SetMVP(MVP);
+
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindVertexArray(vao);
         
+        trinagleShader->EnableShader();
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        trinagleShader->DisableShader();
        
-        glfwPollEvents();
-        
+
         glfwSwapBuffers(window);
     }
 
