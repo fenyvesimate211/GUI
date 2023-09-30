@@ -1,9 +1,46 @@
 #include <GL/glew.h>    
 #include <GLFW/glfw3.h> 
 #include <stdio.h>
+#include <vector>
+#include <glm/glm.hpp>
 
 #include "shader.h"
 #include "camera.h"
+#include <iostream>
+
+// Calculating points for Bezier
+
+    // Calculate binomial coefficient C(n, k)
+int BinomialCoefficient(int n, int k) {
+    if (k < 0 || k > n) {
+        return 0;
+    }
+
+    int result = 1;
+    for (int i = 0; i < k; ++i) {
+        result *= (n - i);
+        result /= (i + 1);
+    }
+
+    return result;
+}
+
+glm::vec3 CalculateBezierSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPoints) {
+    int n = controlPoints.size() - 1; // Rows
+    int m = controlPoints[0].size() - 1; // Columns
+
+    glm::vec3 point(0.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i <= n; i++) {
+        for (int j = 0; j <= m; j++) {
+            int coeff = BinomialCoefficient(n, i) * BinomialCoefficient(m, j);
+            float term = coeff * std::pow(u, i) * std::pow(1 - u, n - i) * std::pow(v, j) * std::pow(1 - v, m - j);
+            point += term * controlPoints[i][j];
+        }
+    }
+
+    return point;
+}
 
 int main() {
 
@@ -74,6 +111,56 @@ int main() {
     // Shader
 
     TriangleShader* trinagleShader = new TriangleShader();
+
+    // Control Points
+
+    std::vector<std::vector<glm::vec3>> controlPoints(4, std::vector<glm::vec3>(4));
+
+    // Define the control points
+    controlPoints[0][0] = glm::vec3(-1.5f, -1.5f, 0.0f);
+    controlPoints[0][1] = glm::vec3(-0.5f, -1.5f, 0.0f);
+    controlPoints[0][2] = glm::vec3(0.5f, -1.5f, 0.0f);
+    controlPoints[0][3] = glm::vec3(1.5f, -1.5f, 0.0f);
+
+    controlPoints[1][0] = glm::vec3(-1.5f, -0.5f, 0.0f);
+    controlPoints[1][1] = glm::vec3(-0.5f, -0.5f, 1.0f);
+    controlPoints[1][2] = glm::vec3(0.5f, -0.5f, 1.0f);
+    controlPoints[1][3] = glm::vec3(1.5f, -0.5f, 0.0f);
+
+    controlPoints[2][0] = glm::vec3(-1.5f, 0.5f, 0.0f);
+    controlPoints[2][1] = glm::vec3(-0.5f, 0.5f, 1.0f);
+    controlPoints[2][2] = glm::vec3(0.5f, 0.5f, 1.0f);
+    controlPoints[2][3] = glm::vec3(1.5f, 0.5f, 0.0f);
+
+    controlPoints[3][0] = glm::vec3(-1.5f, 1.5f, 0.0f);
+    controlPoints[3][1] = glm::vec3(-0.5f, 1.5f, 0.0f);
+    controlPoints[3][2] = glm::vec3(0.5f, 1.5f, 0.0f);
+    controlPoints[3][3] = glm::vec3(1.5f, 1.5f, 0.0f);
+
+    // Define the resolution of the grid (e.g., number of steps in u and v)
+    int resolutionU = 50; // Number of steps in the u direction
+    int resolutionV = 50; // Number of steps in the v direction
+
+    // Create a 2D vector to store all the surface points
+    std::vector<std::vector<glm::vec3>> surfacePoints(resolutionU + 1, std::vector<glm::vec3>(resolutionV + 1));
+
+    // Loop through the grid of (u, v) parameter values
+    for (int i = 0; i <= resolutionU; i++) {
+        float u = static_cast<float>(i) / static_cast<float>(resolutionU);
+
+        for (int j = 0; j <= resolutionV; j++) {
+            float v = static_cast<float>(j) / static_cast<float>(resolutionV);
+
+            // Calculate the surface point for the current (u, v)
+            glm::vec3 surfacePoint = CalculateBezierSurfacePoint(u, v, controlPoints);
+
+            std::cout << "Point at (u=" << i << "/" << resolutionU << ", v=" << j << "/" << resolutionV << "): ";
+            std::cout << "X=" << surfacePoint.x << ", Y=" << surfacePoint.y << ", Z=" << surfacePoint.z << std::endl;
+            // Now, 'surfacePoint' contains the 3D coordinates of a point on the Bezier surface
+            // You can use this point for rendering or other purposes
+            surfacePoints[i][j] = surfacePoint;
+        }
+    }
    
     // Rendering
 
