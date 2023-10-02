@@ -8,7 +8,7 @@
 #include "camera.h"
 #include <iostream>
 
-// Calculating points for Bezier
+    // Calculating points for Bezier
 
     // Calculate binomial coefficient C(n, k)
 int BinomialCoefficient(int n, int k) {
@@ -77,30 +77,9 @@ int main() {
     printf("OpenGL version supported %s\n", version);
 
     glEnable(GL_DEPTH_TEST);
-
     glDepthFunc(GL_LESS);
 
-
-
-    // Geometry
-
-    GLuint vao;
-    GLuint vbo;
-
-    GLfloat points[] = { 0.0f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f };
-
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), points, GL_STATIC_DRAW);
-    
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    
-    glEnableVertexAttribArray(0);
-  
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-   
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glPointSize(10);
 
     // Camera
 
@@ -154,16 +133,95 @@ int main() {
             // Calculate the surface point for the current (u, v)
             glm::vec3 surfacePoint = CalculateBezierSurfacePoint(u, v, controlPoints);
 
-            std::cout << "Point at (u=" << i << "/" << resolutionU << ", v=" << j << "/" << resolutionV << "): ";
-            std::cout << "X=" << surfacePoint.x << ", Y=" << surfacePoint.y << ", Z=" << surfacePoint.z << std::endl;
+            //std::cout << "Point at (u=" << i << "/" << resolutionU << ", v=" << j << "/" << resolutionV << "): ";
+            //std::cout << "X=" << surfacePoint.x << ", Y=" << surfacePoint.y << ", Z=" << surfacePoint.z << std::endl;
             // Now, 'surfacePoint' contains the 3D coordinates of a point on the Bezier surface
             // You can use this point for rendering or other purposes
             surfacePoints[i][j] = surfacePoint;
         }
     }
-   
-    // Rendering
 
+    // Geometry of triangle
+
+    GLfloat points[] = { 0.0f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f };
+
+    GLuint triangle_vao;
+    glGenVertexArrays(1, &triangle_vao);
+    glBindVertexArray(triangle_vao);
+
+    GLuint triangle_vbo;
+    glGenBuffers(1, &triangle_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, triangle_vbo);
+    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), points, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+    glBindVertexArray(0);
+    glDisableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Geometry of control points
+
+    std::vector<glm::vec3> controlPoints2(16);
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            controlPoints2[i * 4 + j] = controlPoints[i][j];
+        }
+    }
+
+    GLuint cp_vao;
+    glGenVertexArrays(1, &cp_vao);
+    glBindVertexArray(cp_vao);
+
+    GLuint cp_vbo;
+    glGenBuffers(1, &cp_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, cp_vbo);
+    glBufferData(GL_ARRAY_BUFFER, controlPoints2.size() * sizeof(glm::vec3), &controlPoints2[0], GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindVertexArray(0);
+    glDisableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Geometry of surfice points
+
+    std::vector<glm::vec3> surfacePoints2;
+    for (int i = 0; i < resolutionU; i++)
+    {
+        for (int j = 0; j < resolutionV; j++)
+        {
+            surfacePoints2.push_back(surfacePoints[i][j]);
+            surfacePoints2.push_back(surfacePoints[i + 1][j]);
+            surfacePoints2.push_back(surfacePoints[i][j + 1]);
+
+            surfacePoints2.push_back(surfacePoints[i][j + 1]);
+            surfacePoints2.push_back(surfacePoints[i + 1][j]);
+            surfacePoints2.push_back(surfacePoints[i + 1][j + 1]);
+        }
+    }
+
+    GLuint sp_vao;
+    glGenVertexArrays(1, &sp_vao);
+    glBindVertexArray(sp_vao);
+
+    GLuint sp_vbo;
+    glGenBuffers(1, &sp_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, sp_vbo);
+    glBufferData(GL_ARRAY_BUFFER, surfacePoints2.size() * sizeof(glm::vec3), &surfacePoints2[0], GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindVertexArray(0);
+    glDisableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Rendering
 
     while (!glfwWindowShouldClose(window))
     {
@@ -176,14 +234,31 @@ int main() {
         glm::mat4 MVP = projection * view * model;
         trinagleShader->SetMVP(MVP);
 
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindVertexArray(vao);
-        
+
+        // triangle
+        trinagleShader->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
         trinagleShader->EnableShader();
+        glBindVertexArray(triangle_vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         trinagleShader->DisableShader();
+
+        // control points
+        trinagleShader->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
+        trinagleShader->EnableShader();
+        glBindVertexArray(cp_vao);
+        glDrawArrays(GL_POINTS, 0, controlPoints2.size());
+        trinagleShader->DisableShader();
+
+        // surface points
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
+        trinagleShader->SetColor(glm::vec3(1.0f, 1.0f, 0.0f));
+        trinagleShader->EnableShader();
+        glBindVertexArray(sp_vao);
+        glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
+        trinagleShader->DisableShader();
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
        
 
         glfwSwapBuffers(window);

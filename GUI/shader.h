@@ -35,10 +35,12 @@ public:
     ~TriangleShader();
 
     void SetMVP(glm::mat4 MVP);
+    void SetColor(glm::vec3 color);
 
 private:
 
     GLuint uniform_MVP;
+    GLuint uniform_color;
 };
 
 
