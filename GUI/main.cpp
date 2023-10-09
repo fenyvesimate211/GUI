@@ -42,6 +42,54 @@ glm::vec3 CalculateBezierSurfacePoint(float u, float v, const std::vector<std::v
     return point;
 }
 
+// Calculate B-Spline basis functions using Cox-de Boor recursion
+float CalculateBasisFunction(int i, int p, float t, const std::vector<float>& knotVector) {
+    if (p == 0) {
+        if (knotVector[i] <= t && t < knotVector[i + 1]) {
+            return 1.0f;
+        }
+        else {
+            return 0.0f;
+        }
+    }
+
+    float basis1 = 0.0f;
+    float basis2 = 0.0f;
+
+    if (knotVector[i + p] - knotVector[i] != 0.0f) {
+        basis1 = (t - knotVector[i]) / (knotVector[i + p] - knotVector[i]) * CalculateBasisFunction(i, p - 1, t, knotVector);
+    }
+
+    if (knotVector[i + p + 1] - knotVector[i + 1] != 0.0f) {
+        basis2 = (knotVector[i + p + 1] - t) / (knotVector[i + p + 1] - knotVector[i + 1]) * CalculateBasisFunction(i + 1, p - 1, t, knotVector);
+    }
+
+    return basis1 + basis2;
+}
+
+glm::vec3 CalculateBSplineSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPointsU, const std::vector<std::vector<glm::vec3>>& controlPointsV, const std::vector<float>& knotVectorU, const std::vector<float>& knotVectorV) {
+    int n = controlPointsU.size() - 1; // Rows
+    int m = controlPointsV.size() - 1; // Columns
+    
+
+    // Change these values to make the surface different
+    int pU = 1;
+    int pV = 1;
+
+    glm::vec3 point(0.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i <= n; i++) {
+        for (int j = 0; j <= m; j++) {
+            float basisU = CalculateBasisFunction(i, pU, u, knotVectorU);
+            float basisV = CalculateBasisFunction(j, pV, v, knotVectorV);
+            point += basisU * basisV * controlPointsU[i][j];
+        }
+    }
+
+
+    return point;
+}
+
 int main() {
 
     // GLFW
@@ -117,11 +165,12 @@ int main() {
     controlPoints[3][3] = glm::vec3(1.5f, 1.5f, 0.0f);
 
     // Define the resolution of the grid (e.g., number of steps in u and v)
-    int resolutionU = 50; // Number of steps in the u direction
-    int resolutionV = 50; // Number of steps in the v direction
+    int resolutionU = 25; // Number of steps in the u direction
+    int resolutionV = 25; // Number of steps in the v direction
 
     // Create a 2D vector to store all the surface points
     std::vector<std::vector<glm::vec3>> surfacePoints(resolutionU + 1, std::vector<glm::vec3>(resolutionV + 1));
+    std::vector<std::vector<glm::vec3>> surfacePointsBSpline(resolutionU + 1, std::vector<glm::vec3>(resolutionV + 1));
 
     // Loop through the grid of (u, v) parameter values
     for (int i = 0; i <= resolutionU; i++) {
@@ -133,11 +182,21 @@ int main() {
             // Calculate the surface point for the current (u, v)
             glm::vec3 surfacePoint = CalculateBezierSurfacePoint(u, v, controlPoints);
 
-            //std::cout << "Point at (u=" << i << "/" << resolutionU << ", v=" << j << "/" << resolutionV << "): ";
-            //std::cout << "X=" << surfacePoint.x << ", Y=" << surfacePoint.y << ", Z=" << surfacePoint.z << std::endl;
+
+            std::vector<float> knotVectorU = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12 };
+            std::vector<float> knotVectorV = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12 };
+
+            // Calculate B Spline surface point for the current (u, v)
+            glm::vec3 surfacePoint2 = CalculateBSplineSurfacePoint(u, v, controlPoints, controlPoints, knotVectorU, knotVectorV);
+
+            
+            // Console log the B Spline points
+            // std::cout << "Point at (u=" << i << "/" << resolutionU << ", v=" << j << "/" << resolutionV << "): ";
+            // std::cout << "X=" << surfacePoint2.x << ", Y=" << surfacePoint2.y << ", Z=" << surfacePoint2.z << std::endl;
             // Now, 'surfacePoint' contains the 3D coordinates of a point on the Bezier surface
             // You can use this point for rendering or other purposes
-            surfacePoints[i][j] = surfacePoint;
+            surfacePoints[i][j] = surfacePoint2;
+            //surfacePointsBSpline[i][j] = surfacePoint2;
         }
     }
 
