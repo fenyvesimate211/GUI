@@ -1,13 +1,14 @@
 #include <GL/glew.h>    
 #include <GLFW/glfw3.h> 
 #include <stdio.h>
-#include <vector>
-#include <glm/glm.hpp>
-
+#include <iostream>
 #include "shader.h"
 #include "camera.h"
 #include "surface.h"
-#include <iostream>
+
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 
 
@@ -50,6 +51,14 @@ int main() {
 
     glPointSize(10);
 
+    // Initialize Dear ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 410");
+
     // Camera
 
     Camera* camera = new Camera();
@@ -62,8 +71,8 @@ int main() {
 
 
     // Surface and ControlPoints
-    Surface* bezierSurface = new BezierSurface();
-    bezierSurface->CalculateSurfacePoints();
+    Surface* surface = new BezierSurface();
+    surface->CalculateSurfacePoints();
     
 
     // Geometry of triangle
@@ -93,7 +102,7 @@ int main() {
     {
         for (int j = 0; j < 4; j++)
         {
-            controlPoints2[i * 4 + j] = bezierSurface->controlPoints[i][j];
+            controlPoints2[i * 4 + j] = surface->controlPoints[i][j];
         }
     }
 
@@ -116,17 +125,17 @@ int main() {
     // Geometry of surfice points
 
     std::vector<glm::vec3> surfacePoints2;
-    for (int i = 0; i < bezierSurface->resolutionU; i++)
+    for (int i = 0; i < surface->resolutionU; i++)
     {
-        for (int j = 0; j < bezierSurface->resolutionV; j++)
+        for (int j = 0; j < surface->resolutionV; j++)
         {
-            surfacePoints2.push_back(bezierSurface->surfacePoints[i][j]);
-            surfacePoints2.push_back(bezierSurface->surfacePoints[i + 1][j]);
-            surfacePoints2.push_back(bezierSurface->surfacePoints[i][j + 1]);
+            surfacePoints2.push_back(surface->surfacePoints[i][j]);
+            surfacePoints2.push_back(surface->surfacePoints[i + 1][j]);
+            surfacePoints2.push_back(surface->surfacePoints[i][j + 1]);
 
-            surfacePoints2.push_back(bezierSurface->surfacePoints[i][j + 1]);
-            surfacePoints2.push_back(bezierSurface->surfacePoints[i + 1][j]);
-            surfacePoints2.push_back(bezierSurface->surfacePoints[i + 1][j + 1]);
+            surfacePoints2.push_back(surface->surfacePoints[i][j + 1]);
+            surfacePoints2.push_back(surface->surfacePoints[i + 1][j]);
+            surfacePoints2.push_back(surface->surfacePoints[i + 1][j + 1]);
         }
     }
 
@@ -148,19 +157,82 @@ int main() {
 
     // Rendering
 
+    int selectedPointU = 0;
+    int selectedPointV = 0;
+
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 
-        camera->OnRender(window);
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // ImGui::ShowDemoWindow();
+
+        // Define window components
+        ImGui::Begin("Edit Control Point");
+        ImGui::InputInt("U", &selectedPointU);
+        ImGui::InputInt("V: ", &selectedPointV);
+        selectedPointU = glm::clamp(selectedPointU, 0, 3);
+        selectedPointV = glm::clamp(selectedPointV, 0, 3);
+        glm::vec3 selectedPoint = surface->controlPoints[selectedPointU][selectedPointV];
+        ImGui::DragFloat3("Position", (float*)&selectedPoint,0.01f);
+        surface->controlPoints[selectedPointU][selectedPointV] = selectedPoint;
+        ImGui::End();
+        
+        // Recalculate
+        surface->CalculateSurfacePoints();
+
+        // Geometry of control points
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                controlPoints2[i * 4 + j] = surface->controlPoints[i][j];
+            }
+        }
+        glBindVertexArray(cp_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, cp_vbo);
+        glBufferData(GL_ARRAY_BUFFER, controlPoints2.size() * sizeof(glm::vec3), &controlPoints2[0], GL_STATIC_DRAW);
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // Geometry of surfice points
+        surfacePoints2.clear();
+        for (int i = 0; i < surface->resolutionU; i++)
+        {
+            for (int j = 0; j < surface->resolutionV; j++)
+            {
+                surfacePoints2.push_back(surface->surfacePoints[i][j]);
+                surfacePoints2.push_back(surface->surfacePoints[i + 1][j]);
+                surfacePoints2.push_back(surface->surfacePoints[i][j + 1]);
+
+                surfacePoints2.push_back(surface->surfacePoints[i][j + 1]);
+                surfacePoints2.push_back(surface->surfacePoints[i + 1][j]);
+                surfacePoints2.push_back(surface->surfacePoints[i + 1][j + 1]);
+            }
+        }
+        glBindVertexArray(sp_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, sp_vbo);
+        glBufferData(GL_ARRAY_BUFFER, surfacePoints2.size() * sizeof(glm::vec3), &surfacePoints2[0], GL_STATIC_DRAW);
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // Calculate matrices
+        if (!ImGui::GetIO().WantCaptureMouse)
+        {
+            camera->OnRender(window);
+        }
         glm::mat4 model = glm::mat4(1.0f); // identity matrix
         glm::mat4 view = camera->GetViewMatrix();
         glm::mat4 projection = camera->GetProjectionMatrix();
         glm::mat4 MVP = projection * view * model;
         trinagleShader->SetMVP(MVP);
 
+        // Clear frame
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
         // triangle
         trinagleShader->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
@@ -184,6 +256,10 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
         trinagleShader->DisableShader();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        // GUI
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
        
 
         glfwSwapBuffers(window);
