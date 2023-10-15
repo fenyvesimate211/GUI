@@ -133,14 +133,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="surface_bspline.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shader.cpp" />
-    <ClCompile Include="triangle_shader.cpp" />
+    <ClCompile Include="surface.cpp" />
+    <ClCompile Include="surface_bezier.cpp" />
+    <ClCompile Include="shader_triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="surface.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="triangle.fs" />
