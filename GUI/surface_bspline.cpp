@@ -9,34 +9,27 @@ void BsplineSurface::CalculateSurfacePoints()
         for (int j = 0; j <= resolutionV; j++) {
             float v = static_cast<float>(j) / static_cast<float>(resolutionV);
 
+
             // Calculate the surface point for the current (u, v)
             glm::vec3 surfacePoint = CalculateBezierSurfacePoint(u, v, controlPoints);
-
-
             std::vector<float> knotVectorU = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12 };
             std::vector<float> knotVectorV = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12 };
 
             // Calculate B Spline surface point for the current (u, v)
-            glm::vec3 surfacePoint2 = CalculateBSplineSurfacePoint(u, v, controlPoints, controlPoints, knotVectorU, knotVectorV);
-
-
-            // Console log the B Spline points
-            // std::cout << "Point at (u=" << i << "/" << resolutionU << ", v=" << j << "/" << resolutionV << "): ";
-            // std::cout << "X=" << surfacePoint2.x << ", Y=" << surfacePoint2.y << ", Z=" << surfacePoint2.z << std::endl;
-            // Now, 'surfacePoint' contains the 3D coordinates of a point on the Bezier surface
-            // You can use this point for rendering or other purposes
-            surfacePoints[i][j] = surfacePoint2;
-            //surfacePointsBSpline[i][j] = surfacePoint2;
+            surfacePoints[i][j] = CalculateBSplineSurfacePoint(u, v, controlPoints, controlPoints, knotVectorU, knotVectorV);
         }
     }
 }
-
 
 
 // Calculate binomial coefficient C(n, k)
 int BsplineSurface::BinomialCoefficient(int n, int k) {
     if (k < 0 || k > n) {
         return 0;
+    }
+
+    if (k == 0 || k == n) {
+        return 1;
     }
 
     int result = 1;
@@ -47,6 +40,8 @@ int BsplineSurface::BinomialCoefficient(int n, int k) {
 
     return result;
 }
+
+
 
 glm::vec3 BsplineSurface::CalculateBezierSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPoints) {
     int n = controlPoints.size() - 1; // Rows
@@ -65,7 +60,6 @@ glm::vec3 BsplineSurface::CalculateBezierSurfacePoint(float u, float v, const st
     return point;
 }
 
-// Calculate B-Spline basis functions using Cox-de Boor recursion
 float BsplineSurface::CalculateBasisFunction(int i, int p, float t, const std::vector<float>& knotVector) {
     if (p == 0) {
         if (knotVector[i] <= t && t < knotVector[i + 1]) {
@@ -90,14 +84,14 @@ float BsplineSurface::CalculateBasisFunction(int i, int p, float t, const std::v
     return basis1 + basis2;
 }
 
+
+
 glm::vec3 BsplineSurface::CalculateBSplineSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPointsU, const std::vector<std::vector<glm::vec3>>& controlPointsV, const std::vector<float>& knotVectorU, const std::vector<float>& knotVectorV) {
-    int n = controlPointsU.size() - 1; // Rows
-    int m = controlPointsV.size() - 1; // Columns
+    int n = controlPointsU.size() - 1;
+    int m = controlPointsV.size() - 1;
 
-
-    // Change these values to make the surface different
-    int pU = 1;
-    int pV = 1;
+    int pU = 2;
+    int pV = 2;
 
     glm::vec3 point(0.0f, 0.0f, 0.0f);
 
@@ -105,10 +99,10 @@ glm::vec3 BsplineSurface::CalculateBSplineSurfacePoint(float u, float v, const s
         for (int j = 0; j <= m; j++) {
             float basisU = CalculateBasisFunction(i, pU, u, knotVectorU);
             float basisV = CalculateBasisFunction(j, pV, v, knotVectorV);
-            point += basisU * basisV * controlPointsU[i][j];
+            point += basisU * basisV * controlPointsU[i][j] * controlPointsV[i][j];
+
         }
     }
-
 
     return point;
 }
