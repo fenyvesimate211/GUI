@@ -1,63 +1,18 @@
 #include "surface.h"
 
-void BsplineSurface::CalculateSurfacePoints()
-{
-    // Loop through the grid of (u, v) parameter values
-    for (int i = 0; i <= resolutionU; i++) {
+void BsplineSurface::CalculateSurfacePoints() {
+    for (int i = 0; i <= resolutionU; ++i) {
         float u = static_cast<float>(i) / static_cast<float>(resolutionU);
 
-        for (int j = 0; j <= resolutionV; j++) {
+        for (int j = 0; j <= resolutionV; ++j) {
             float v = static_cast<float>(j) / static_cast<float>(resolutionV);
 
+            std::vector<float> knotVectorU = { 0, 0, 0, 0, 0, 1, 1, 1, 1, 1 };
+            std::vector<float> knotVectorV = { 0, 0, 0, 0, 0, 1, 1, 1, 1, 1 };
 
-            // Calculate the surface point for the current (u, v)
-            glm::vec3 surfacePoint = CalculateBezierSurfacePoint(u, v, controlPoints);
-            std::vector<float> knotVectorU = { 0, 0, 0, 0, 1, 1, 1, 1};
-            std::vector<float> knotVectorV = { 0, 0, 0, 0, 1, 1, 1, 1};
-
-            // Calculate B Spline surface point for the current (u, v)
             surfacePoints[i][j] = CalculateBSplineSurfacePoint(u, v, controlPoints, controlPoints, knotVectorU, knotVectorV);
         }
     }
-}
-
-
-// Calculate binomial coefficient C(n, k)
-int BsplineSurface::BinomialCoefficient(int n, int k) {
-    if (k < 0 || k > n) {
-        return 0;
-    }
-
-    if (k == 0 || k == n) {
-        return 1;
-    }
-
-    int result = 1;
-    for (int i = 0; i < k; ++i) {
-        result *= (n - i);
-        result /= (i + 1);
-    }
-
-    return result;
-}
-
-
-
-glm::vec3 BsplineSurface::CalculateBezierSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPoints) {
-    int n = controlPoints.size() - 1; // Rows
-    int m = controlPoints[0].size() - 1; // Columns
-
-    glm::vec3 point(0.0f, 0.0f, 0.0f);
-
-    for (int i = 0; i <= n; i++) {
-        for (int j = 0; j <= m; j++) {
-            int coeff = BinomialCoefficient(n, i) * BinomialCoefficient(m, j);
-            float term = coeff * std::pow(u, i) * std::pow(1 - u, n - i) * std::pow(v, j) * std::pow(1 - v, m - j);
-            point += term * controlPoints[i][j];
-        }
-    }
-
-    return point;
 }
 
 float BsplineSurface::CalculateBasisFunction(int i, int p, float t, const std::vector<float>& knotVector) {
@@ -79,29 +34,25 @@ float BsplineSurface::CalculateBasisFunction(int i, int p, float t, const std::v
 
     if (knotVector[i + p + 1] - knotVector[i + 1] != 0.0f) {
         basis2 = (knotVector[i + p + 1] - t) / (knotVector[i + p + 1] - knotVector[i + 1]) * CalculateBasisFunction(i + 1, p - 1, t, knotVector);
-
     }
-    return basis1 + basis2;
 
+    return basis1 + basis2;
 }
 
-
-
 glm::vec3 BsplineSurface::CalculateBSplineSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPointsU, const std::vector<std::vector<glm::vec3>>& controlPointsV, const std::vector<float>& knotVectorU, const std::vector<float>& knotVectorV) {
-    int n = 3;
-    int m = 3;
+    int n = controlPointsU.size() - 1;
+    int m = controlPointsV[0].size() - 1;
 
-    int pU = 3;
-    int pV = 3;
+    int pU = controlPointsU.size() - 1;
+    int pV = controlPointsV[0].size() - 1;
 
     glm::vec3 point(0.0f, 0.0f, 0.0f);
 
-    for (int i = 0; i <= n; i++) {
-        for (int j = 0; j <= m; j++) {
+    for (int i = 0; i <= n; ++i) {
+        for (int j = 0; j <= m; ++j) {
             float basisU = CalculateBasisFunction(i, pU, u, knotVectorU);
             float basisV = CalculateBasisFunction(j, pV, v, knotVectorV);
-            point += basisU * basisV * controlPointsU[i][j];
-
+            point += basisU * basisV * controlPointsV[i][j];
         }
     }
 
