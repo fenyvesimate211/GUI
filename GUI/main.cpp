@@ -71,7 +71,7 @@ int main() {
 
 
     // Surface and ControlPoints
-    Surface* surface = new BezierSurface();
+    Surface* surface = new BsplineSurface();
     surface->CalculateSurfacePoints();
     
 

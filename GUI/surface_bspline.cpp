@@ -12,8 +12,8 @@ void BsplineSurface::CalculateSurfacePoints()
 
             // Calculate the surface point for the current (u, v)
             glm::vec3 surfacePoint = CalculateBezierSurfacePoint(u, v, controlPoints);
-            std::vector<float> knotVectorU = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12 };
-            std::vector<float> knotVectorV = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12 };
+            std::vector<float> knotVectorU = { 0, 0, 0, 0, 1, 1, 1, 1};
+            std::vector<float> knotVectorV = { 0, 0, 0, 0, 1, 1, 1, 1};
 
             // Calculate B Spline surface point for the current (u, v)
             surfacePoints[i][j] = CalculateBSplineSurfacePoint(u, v, controlPoints, controlPoints, knotVectorU, knotVectorV);
@@ -62,7 +62,7 @@ glm::vec3 BsplineSurface::CalculateBezierSurfacePoint(float u, float v, const st
 
 float BsplineSurface::CalculateBasisFunction(int i, int p, float t, const std::vector<float>& knotVector) {
     if (p == 0) {
-        if (knotVector[i] <= t && t < knotVector[i + 1]) {
+        if (knotVector[i] <= t && t <= knotVector[i + 1]) {
             return 1.0f;
         }
         else {
@@ -79,19 +79,20 @@ float BsplineSurface::CalculateBasisFunction(int i, int p, float t, const std::v
 
     if (knotVector[i + p + 1] - knotVector[i + 1] != 0.0f) {
         basis2 = (knotVector[i + p + 1] - t) / (knotVector[i + p + 1] - knotVector[i + 1]) * CalculateBasisFunction(i + 1, p - 1, t, knotVector);
-    }
 
+    }
     return basis1 + basis2;
+
 }
 
 
 
 glm::vec3 BsplineSurface::CalculateBSplineSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPointsU, const std::vector<std::vector<glm::vec3>>& controlPointsV, const std::vector<float>& knotVectorU, const std::vector<float>& knotVectorV) {
-    int n = controlPointsU.size() - 1;
-    int m = controlPointsV.size() - 1;
+    int n = 3;
+    int m = 3;
 
-    int pU = 2;
-    int pV = 2;
+    int pU = 3;
+    int pV = 3;
 
     glm::vec3 point(0.0f, 0.0f, 0.0f);
 
@@ -99,7 +100,7 @@ glm::vec3 BsplineSurface::CalculateBSplineSurfacePoint(float u, float v, const s
         for (int j = 0; j <= m; j++) {
             float basisU = CalculateBasisFunction(i, pU, u, knotVectorU);
             float basisV = CalculateBasisFunction(j, pV, v, knotVectorV);
-            point += basisU * basisV * controlPointsU[i][j] * controlPointsV[i][j];
+            point += basisU * basisV * controlPointsU[i][j];
 
         }
     }
