@@ -4,7 +4,7 @@
 Surface::Surface()
 {
     // Control Points
-    controlPoints = std::vector<std::vector<glm::vec3>>(4, std::vector<glm::vec3>(4));
+    controlPoints = std::vector<std::vector<glm::vec3>>(5, std::vector<glm::vec3>(5));
 
     // Define the control points
     controlPoints[0][0] = glm::vec3(-1.5f, -1.5f, 0.0f);
@@ -26,6 +26,18 @@ Surface::Surface()
     controlPoints[3][1] = glm::vec3(-0.5f, 1.5f, 0.0f);
     controlPoints[3][2] = glm::vec3(0.5f, 1.5f, 0.0f);
     controlPoints[3][3] = glm::vec3(1.5f, 1.5f, 0.0f);
+
+
+    controlPoints[4][0] = glm::vec3(-1.5f, 2.5f, 0.0f);
+    controlPoints[4][1] = glm::vec3(-0.5f, 2.5f, 0.0f);
+    controlPoints[4][2] = glm::vec3(0.5f, 2.5f, 0.0f);
+    controlPoints[4][3] = glm::vec3(1.5f, 2.5f, 0.0f);
+
+    controlPoints[0][4] = glm::vec3(2.5f, -1.5f, 0.0f);
+    controlPoints[1][4] = glm::vec3(2.5f, -0.5f, 0.0f);
+    controlPoints[2][4] = glm::vec3(2.5f, 0.5f, 0.0f);
+    controlPoints[3][4] = glm::vec3(2.5f, 1.5f, 0.0f);
+    controlPoints[4][4] = glm::vec3(2.5f, 2.5f, 0.0f);
 
     // Define the resolution of the grid (e.g., number of steps in u and v)
     resolutionU = 50; // Number of steps in the u direction

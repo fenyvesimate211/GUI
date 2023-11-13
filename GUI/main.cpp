@@ -73,8 +73,11 @@ int main() {
 
 
     // Surface and ControlPoints
-    Surface* surface = new NURBSSurface();
-    surface->CalculateSurfacePoints();
+    Surface* bezierSurface = new BezierSurface();
+    Surface* bSplineSurface = new BsplineSurface();
+    Surface* nurbsSurface = new NURBSSurface();
+
+    Surface* surface = bezierSurface;
     
 
     // Geometry of triangle
@@ -98,7 +101,7 @@ int main() {
 
     // Geometry of control points
 
-    std::vector<glm::vec3> controlPoints2(16);
+    std::vector<glm::vec3> controlPoints2(surface->controlPoints.size() * surface->controlPoints[0].size());
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 4; j++)
@@ -199,6 +202,17 @@ int main() {
         const char* items[] = { "Bezier", "Bspline", "Nurbs"};
         static int item_current = 0;
         ImGui::Combo("Surface", &item_current, items, IM_ARRAYSIZE(items));
+        switch (item_current) {
+        case 0:
+            surface = bezierSurface;
+            break;
+        case 1:
+            surface = bSplineSurface;
+            break;
+        case 2:
+            surface = nurbsSurface;
+            break;
+        }
         ImGui::SeparatorText("Edit control points");
         ImGui::Text("U:       ");
         ImGui::SameLine();
@@ -206,8 +220,8 @@ int main() {
         ImGui::Text("V:       ");
         ImGui::SameLine();
         ImGui::InputInt("##V", &selectedPointV);
-        selectedPointU = glm::clamp(selectedPointU, 0, 3);
-        selectedPointV = glm::clamp(selectedPointV, 0, 3);
+        selectedPointU = glm::clamp(selectedPointU, 0, (int)surface->controlPoints.size() - 1);
+        selectedPointV = glm::clamp(selectedPointV, 0, (int)surface->controlPoints[0].size() - 1);
         glm::vec3 selectedPoint = surface->controlPoints[selectedPointU][selectedPointV];
         ImGui::Text("Position:");
         ImGui::SameLine();
@@ -219,11 +233,11 @@ int main() {
         surface->CalculateSurfacePoints();
 
         // Geometry of control points
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < surface->controlPoints.size(); i++)
         {
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < surface->controlPoints[0].size(); j++)
             {
-                controlPoints2[i * 4 + j] = surface->controlPoints[i][j];
+                controlPoints2[i * surface->controlPoints.size() + j] = surface->controlPoints[i][j];
             }
         }
         glBindVertexArray(cp_vao);
@@ -302,7 +316,7 @@ int main() {
         trinagleShader->DisableShader();
 
         // surface points
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
         phongShader->SetMVP(MVP);
         phongShader->SetLightPosition(glm::vec3(2.0, 2.0, 5.0)); //glm::vec3(2.0, 2.0, 5.0)
         phongShader->SetViewPos(camera->position);
@@ -311,48 +325,8 @@ int main() {
         glBindVertexArray(sp_vao);
         glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
         phongShader->DisableShader();
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        /* glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Устанавливаем каркасный режим отрисовки
-
-        // Очищаем массив точек
-        surfacePoints2.clear();
-
-        // Создаем сетку треугольников
-        for (int i = 0; i < surface->resolutionU - 1; i++) {
-            for (int j = 0; j < surface->resolutionV - 1; j++) {
-                // Получаем четыре угла квадрата
-                glm::vec3 bottomLeft = surface->surfacePoints[i][j];
-                glm::vec3 bottomRight = surface->surfacePoints[i + 1][j];
-                glm::vec3 topLeft = surface->surfacePoints[i][j + 1];
-                glm::vec3 topRight = surface->surfacePoints[i + 1][j + 1];
-
-                // Добавляем два треугольника для создания квадрата
-                surfacePoints2.push_back(bottomLeft);
-                surfacePoints2.push_back(bottomRight);
-                surfacePoints2.push_back(topLeft);
-
-                surfacePoints2.push_back(topLeft);
-                surfacePoints2.push_back(bottomRight);
-                surfacePoints2.push_back(topRight);
-            }
-        }
-
-        // Обновляем VBO
-        glBindBuffer(GL_ARRAY_BUFFER, sp_vbo);
-        glBufferData(GL_ARRAY_BUFFER, surfacePoints2.size() * sizeof(glm::vec3), &surfacePoints2[0], GL_STATIC_DRAW);
-
-        // Включаем шейдер для отрисовки
-        trinagleShader->SetColor(glm::vec3(1.0f, 1.0f, 0.0f));
-        trinagleShader->EnableShader();
-
-        // Привязываем VAO и рисуем сетку
-        glBindVertexArray(sp_vao);
-        glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
-        trinagleShader->DisableShader();
-
-        // Возвращаем режим отрисовки полигонов обратно к заливке
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
         // GUI
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

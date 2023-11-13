@@ -1,10 +1,10 @@
 #include "surface.h"
 
 void NURBSSurface::CalculateSurfacePoints() {
-    for (int i = 0; i < resolutionU; i++) { // Изменено с <= на <
+    for (int i = 0; i <= resolutionU; i++) { // Изменено с <= на <
         float u = static_cast<float>(i) / static_cast<float>(resolutionU); // Нормализация u
 
-        for (int j = 0; j < resolutionV; j++) { // Изменено с <= на <
+        for (int j = 0; j <= resolutionV; j++) { // Изменено с <= на <
             float v = static_cast<float>(j) / static_cast<float>(resolutionV); // Нормализация v
 
             glm::vec3 surfacePoint = CalculateNURBSSurfacePoint(u, v); // Вызов функции для вычисления точки
@@ -56,7 +56,7 @@ NURBSSurface::NURBSSurface() : Surface(), degreeU(3), degreeV(3) {
 float NURBSSurface::Nip(int i, int p, float u, const std::vector<float>& U) {
     // Базовый случай рекурсии
     if (p == 0) {
-        return (U[i] <= u && u < U[i + 1]) ? 1.0f : 0.0f;
+        return (U[i] <= u && u <= U[i + 1]) ? 1.0f : 0.0f;
     }
 
     float left = 0.0f;
