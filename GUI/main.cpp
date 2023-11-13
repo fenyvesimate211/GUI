@@ -73,7 +73,7 @@ int main() {
 
 
     // Surface and ControlPoints
-    Surface* surface = new BsplineSurface();
+    Surface* surface = new NURBSSurface();
     surface->CalculateSurfacePoints();
     
 
@@ -302,7 +302,7 @@ int main() {
         trinagleShader->DisableShader();
 
         // surface points
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
         phongShader->SetMVP(MVP);
         phongShader->SetLightPosition(glm::vec3(2.0, 2.0, 5.0)); //glm::vec3(2.0, 2.0, 5.0)
         phongShader->SetViewPos(camera->position);
@@ -311,7 +311,7 @@ int main() {
         glBindVertexArray(sp_vao);
         glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
         phongShader->DisableShader();
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         /* glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Устанавливаем каркасный режим отрисовки
 
