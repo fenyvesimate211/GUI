@@ -60,7 +60,11 @@
     <ClCompile Include="imgui\imgui_widgets.cpp">
       <Filter>Source Files\imgui</Filter>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="shader_phong.cpp">
+=======
+    <ClCompile Include="surfaceNURBS.cpp">
+>>>>>>> b2ed5ba025fed205c20a5a6fb5a624c0e0b56b73
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
