@@ -64,7 +64,7 @@ int main() {
 
     Camera* camera = new Camera();
     camera->horizontalAngle = glm::pi<float>(); // Looking in -Z direction.
-    camera->position = glm::vec3(0.0f, 0.0f, 5.0f);
+    // camera->originPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
     // Shader
 
@@ -319,7 +319,7 @@ int main() {
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
         phongShader->SetMVP(MVP);
         phongShader->SetLightPosition(glm::vec3(2.0, 2.0, 5.0)); //glm::vec3(2.0, 2.0, 5.0)
-        phongShader->SetViewPos(camera->position);
+        phongShader->SetViewPos(camera->cameraPosition);
         phongShader->SetObjectColor(glm::vec3(1.0f, 1.0f, 0.0f));
         phongShader->EnableShader();
         glBindVertexArray(sp_vao);

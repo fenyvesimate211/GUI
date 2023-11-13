@@ -10,9 +10,13 @@ public:
 
     Camera();
 
-    glm::vec3 position;
+    glm::vec3 originPosition; // center of orbit
+    glm::vec3 cameraPosition; // camera
     float horizontalAngle;
     float verticalAngle;
+    float radius;
+    float maxRadius;
+    float minRadius;
 
     int windowWidth;
     int windowHeight;
@@ -23,9 +27,10 @@ public:
     glm::mat4 GetViewMatrix();
     glm::mat4 GetProjectionMatrix();
 
-    float walkSpeed;
+    float zoomSpeed;
     float turnSpeed;
     void OnRender(GLFWwindow* window);
+    static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
     bool isClick;
     int clickXpos;
     int clickYpos;

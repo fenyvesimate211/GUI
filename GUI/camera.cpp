@@ -10,17 +10,21 @@ using namespace glm;
 
 Camera::Camera()
 {
-    position = vec3(0.0f, 0.0f, 0.0f);
+    originPosition = vec3(0.0f, 0.0f, 0.0f);
     horizontalAngle = 0.0f;
     verticalAngle = 0.0f;
+    radius = 10.0f;
+    maxRadius = 20.0f;
+    minRadius = 1.0f;
+    cameraPosition = vec3(10.0f, 0.0f, 0.0f);
 
-    windowWidth  = 16;
+    windowWidth = 16;
     windowHeight = 9;
     verticalFOV = 45.0f;
     nearZ = 0.1f;
     farZ = 100.0f;
-    
-    walkSpeed = 5.0f;
+
+    zoomSpeed = 10.0f;
     turnSpeed = 0.001f;
     isClick = false;
     clickXpos = 0;
@@ -31,6 +35,9 @@ Camera::Camera()
 
 void Camera::OnRender(GLFWwindow* window)
 {
+    glfwSetWindowUserPointer(window, this);
+    glfwSetScrollCallback(window, scroll_callback);
+
     glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
     glViewport(0, 0, windowWidth, windowHeight);
 
@@ -56,7 +63,7 @@ void Camera::OnRender(GLFWwindow* window)
             clickYpos = ypos;
             isClicking = true;
         }
-        if (abs(xpos-clickXpos) > 2 || abs(ypos-clickYpos) > 2)
+        if (abs(xpos - clickXpos) > 2 || abs(ypos - clickYpos) > 2)
         {
             isMoved = true;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -67,9 +74,9 @@ void Camera::OnRender(GLFWwindow* window)
     }
     if (state == GLFW_RELEASE)
     {
-        if(isClicking)
+        if (isClicking)
         {
-            if(isMoved)
+            if (isMoved)
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             else
                 isClick = true;
@@ -78,40 +85,19 @@ void Camera::OnRender(GLFWwindow* window)
         isMoved = false;
     }
 
+    cameraPosition = originPosition - (GetTargetVector() * radius);
 
     static double lastTime = glfwGetTime();
     double currentTime = glfwGetTime();
     float deltaTime = float(currentTime - lastTime);
 
-    float moveSpeed;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT))
-            moveSpeed = walkSpeed * 2;
-        else
-            moveSpeed = walkSpeed;
-
     // Move forward
-    if (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)){
-            position += GetForwardVector() * deltaTime * moveSpeed;
+    if (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)) {
+        radius = clamp(radius - deltaTime * zoomSpeed, minRadius, maxRadius);
     }
     // Move backward
-    if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN)){
-        position -= GetForwardVector() * deltaTime * moveSpeed;
-    }
-    // Move right
-    if (glfwGetKey(window, GLFW_KEY_D) || glfwGetKey(window, GLFW_KEY_RIGHT)){
-        position += GetRightVector() * deltaTime * moveSpeed;
-    }
-    // Move left
-    if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT)){
-        position -= GetRightVector() * deltaTime * moveSpeed;
-    }
-    // Move up
-    if (glfwGetKey(window, GLFW_KEY_SPACE)){
-        position += vec3(0, 1, 0) * deltaTime * moveSpeed;
-    }
-    // Move down
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL)){
-        position -= vec3(0, 1, 0) * deltaTime * moveSpeed;
+    if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN)) {
+        radius = clamp(radius + deltaTime * zoomSpeed, minRadius, maxRadius);
     }
 
     // For the next frame, the "last time" will be "now"
@@ -119,6 +105,11 @@ void Camera::OnRender(GLFWwindow* window)
 }
 
 
+void Camera::scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    Camera* camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
+    camera->radius = clamp(camera->radius - (float)yoffset / 2.0f, camera->minRadius, camera->maxRadius);
+}
 
 
 
@@ -156,11 +147,14 @@ vec3 Camera::GetUpVector()
 
 mat4 Camera::GetViewMatrix()
 {
-    return lookAt(position, position+GetTargetVector(), GetUpVector());
+    return lookAt(cameraPosition, cameraPosition + GetTargetVector(), GetUpVector());
 }
 
 mat4 Camera::GetProjectionMatrix()
 {
+    windowWidth = windowWidth == 0 ? 1 : windowWidth;
+    windowHeight = windowHeight == 0 ? 1 : windowHeight;
+
     return perspective(
         radians(verticalFOV),
         (float)windowWidth / (float)windowHeight,
