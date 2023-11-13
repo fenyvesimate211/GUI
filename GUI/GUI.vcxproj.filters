@@ -60,6 +60,9 @@
     <ClCompile Include="imgui\imgui_widgets.cpp">
       <Filter>Source Files\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="shader_phong.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -104,6 +107,12 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="triangle.vs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="phong.vs">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="phong.fs">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

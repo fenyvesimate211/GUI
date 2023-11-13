@@ -43,6 +43,26 @@ private:
     GLuint uniform_color;
 };
 
+class PhongShader : public Shader
+{
+public:
+
+    PhongShader();
+    ~PhongShader();
+
+    void SetMVP(glm::mat4 MVP);
+    void SetLightPosition(glm::vec3 color);
+    void SetViewPos(glm::vec3 color);
+    void SetObjectColor(glm::vec3 color);
+
+private:
+
+    GLuint uniform_MVP;
+    GLuint uniform_lightPosition;
+    GLuint uniform_viewPos;
+    GLuint uniform_objectColor;
+};
+
 
 
 
