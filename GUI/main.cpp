@@ -257,6 +257,46 @@ int main() {
         trinagleShader->DisableShader();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+        /* glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Устанавливаем каркасный режим отрисовки
+
+        // Очищаем массив точек
+        surfacePoints2.clear();
+
+        // Создаем сетку треугольников
+        for (int i = 0; i < surface->resolutionU - 1; i++) {
+            for (int j = 0; j < surface->resolutionV - 1; j++) {
+                // Получаем четыре угла квадрата
+                glm::vec3 bottomLeft = surface->surfacePoints[i][j];
+                glm::vec3 bottomRight = surface->surfacePoints[i + 1][j];
+                glm::vec3 topLeft = surface->surfacePoints[i][j + 1];
+                glm::vec3 topRight = surface->surfacePoints[i + 1][j + 1];
+
+                // Добавляем два треугольника для создания квадрата
+                surfacePoints2.push_back(bottomLeft);
+                surfacePoints2.push_back(bottomRight);
+                surfacePoints2.push_back(topLeft);
+
+                surfacePoints2.push_back(topLeft);
+                surfacePoints2.push_back(bottomRight);
+                surfacePoints2.push_back(topRight);
+            }
+        }
+
+        // Обновляем VBO
+        glBindBuffer(GL_ARRAY_BUFFER, sp_vbo);
+        glBufferData(GL_ARRAY_BUFFER, surfacePoints2.size() * sizeof(glm::vec3), &surfacePoints2[0], GL_STATIC_DRAW);
+
+        // Включаем шейдер для отрисовки
+        trinagleShader->SetColor(glm::vec3(1.0f, 1.0f, 0.0f));
+        trinagleShader->EnableShader();
+
+        // Привязываем VAO и рисуем сетку
+        glBindVertexArray(sp_vao);
+        glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
+        trinagleShader->DisableShader();
+
+        // Возвращаем режим отрисовки полигонов обратно к заливке
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
         // GUI
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

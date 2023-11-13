@@ -140,6 +140,7 @@
     <ClCompile Include="imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="surfaceNURBS.cpp" />
     <ClCompile Include="surface_bspline.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="main.cpp" />

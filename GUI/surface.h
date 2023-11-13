@@ -57,5 +57,23 @@ private:
 };
 
 
+class NURBSSurface : public Surface {
+public:
+    NURBSSurface();
+    void CalculateSurfacePoints() override;
+
+private:
+    float Nip(int i, int p, float u, const std::vector<float>& U);
+    glm::vec3 CalculateNURBSSurfacePoint(float u, float v);
+
+    std::vector<float> knotVectorU;
+    std::vector<float> knotVectorV;
+    std::vector<std::vector<float>> weights;
+
+    int degreeU;
+    int degreeV;
+};
+
+
 
 #endif
