@@ -48,8 +48,6 @@ public:
 
 private:
 
-    int BinomialCoefficient(int n, int k);
-    glm::vec3 CalculateBezierSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPoints);
     float CalculateBasisFunction(int i, int p, float t, const std::vector<float>& knotVector);
     glm::vec3 CalculateBSplineSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPointsU, const std::vector<std::vector<glm::vec3>>& controlPointsV, const std::vector<float>& knotVectorU, const std::vector<float>& knotVectorV);
 
