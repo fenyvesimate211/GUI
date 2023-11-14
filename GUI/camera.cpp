@@ -11,7 +11,7 @@ using namespace glm;
 Camera::Camera()
 {
     originPosition = vec3(0.0f, 0.0f, 0.0f);
-    horizontalAngle = 0.0f;
+    horizontalAngle = glm::pi<float>(); // Looking in -Z direction.
     verticalAngle = 0.0f;
     radius = 10.0f;
     maxRadius = 20.0f;

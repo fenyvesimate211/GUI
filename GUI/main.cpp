@@ -31,7 +31,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(1280, 720, "Hello Triangle", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "Graphical United Immigrants", NULL, NULL);
     if (!window) {
         fprintf(stderr, "ERROR: could not open window with GLFW3\n");
         glfwTerminate();
@@ -63,8 +63,6 @@ int main() {
     // Camera
 
     Camera* camera = new Camera();
-    camera->horizontalAngle = glm::pi<float>(); // Looking in -Z direction.
-    // camera->originPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
     // Shader
 
@@ -200,8 +198,14 @@ int main() {
         // Define window components
         ImGui::Begin("Select a surface");
         const char* items[] = { "Bezier", "Bspline", "Nurbs"};
+        static int item_previous = -1;
         static int item_current = 0;
         ImGui::Combo("Surface", &item_current, items, IM_ARRAYSIZE(items));
+        bool recalculate = false;
+        if (item_previous != item_current) {
+            recalculate = true;
+            item_previous = item_current;
+        }
         switch (item_current) {
         case 0:
             surface = bezierSurface;
@@ -226,11 +230,24 @@ int main() {
         ImGui::Text("Position:");
         ImGui::SameLine();
         ImGui::DragFloat3("##Position", (float*)&selectedPoint,0.01f);
-        surface->controlPoints[selectedPointU][selectedPointV] = selectedPoint;
+        if (selectedPoint != surface->controlPoints[selectedPointU][selectedPointV])
+            recalculate = true;
+        bezierSurface->controlPoints[selectedPointU][selectedPointV] = selectedPoint;
+        bSplineSurface->controlPoints[selectedPointU][selectedPointV] = selectedPoint;
+        nurbsSurface->controlPoints[selectedPointU][selectedPointV] = selectedPoint;
+        ImGui::SeparatorText("Details");
+        static bool render_controlPoints = true;
+        ImGui::Checkbox("Control points", &render_controlPoints);
+        static bool render_surface = true;
+        ImGui::Checkbox("Surface##2", &render_surface);
+        static bool render_triangle = true;
+        ImGui::Checkbox("Hello Triagle", &render_triangle);
+        ImGui::SetItemTooltip("For nostalgic effects");
         ImGui::End();
         
         // Recalculate
-        surface->CalculateSurfacePoints();
+        if (recalculate)
+            surface->CalculateSurfacePoints();
 
         // Geometry of control points
         for (int i = 0; i < surface->controlPoints.size(); i++)
@@ -300,32 +317,43 @@ int main() {
 
         // Clear frame
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        static const float bgcolor[] = { 0.1, 0.1, 0.1, 0 };
+        glClearBufferfv(GL_COLOR, 0, bgcolor);
 
         // triangle
-        trinagleShader->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-        trinagleShader->EnableShader();
-        glBindVertexArray(triangle_vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        trinagleShader->DisableShader();
+        if (render_triangle)
+        {
+            trinagleShader->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
+            trinagleShader->EnableShader();
+            glBindVertexArray(triangle_vao);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            trinagleShader->DisableShader();
+        }
 
         // control points
-        trinagleShader->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
-        trinagleShader->EnableShader();
-        glBindVertexArray(cp_vao);
-        glDrawArrays(GL_POINTS, 0, controlPoints2.size());
-        trinagleShader->DisableShader();
+        if (render_controlPoints)
+        {
+            trinagleShader->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
+            trinagleShader->EnableShader();
+            glBindVertexArray(cp_vao);
+            glDrawArrays(GL_POINTS, 0, controlPoints2.size());
+            trinagleShader->DisableShader();
+        }
 
         // surface points
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
-        phongShader->SetMVP(MVP);
-        phongShader->SetLightPosition(glm::vec3(2.0, 2.0, 5.0)); //glm::vec3(2.0, 2.0, 5.0)
-        phongShader->SetViewPos(camera->cameraPosition);
-        phongShader->SetObjectColor(glm::vec3(1.0f, 1.0f, 0.0f));
-        phongShader->EnableShader();
-        glBindVertexArray(sp_vao);
-        glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
-        phongShader->DisableShader();
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        if (render_surface)
+        {
+            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
+            phongShader->SetMVP(MVP);
+            phongShader->SetLightPosition(glm::vec3(2.0, 2.0, 5.0)); //glm::vec3(2.0, 2.0, 5.0)
+            phongShader->SetViewPos(camera->cameraPosition);
+            phongShader->SetObjectColor(glm::vec3(1.0f, 1.0f, 0.0f));
+            phongShader->EnableShader();
+            glBindVertexArray(sp_vao);
+            glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
+            phongShader->DisableShader();
+            //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
 
         // GUI
         ImGui::Render();
