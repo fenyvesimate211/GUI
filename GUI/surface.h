@@ -42,16 +42,17 @@ private:
 class BsplineSurface : public Surface
 {
 public:
-
-    BsplineSurface() : Surface() {};
-    void CalculateSurfacePoints();
+    BsplineSurface();
+    void CalculateSurfacePoints() override;
 
 private:
+    float BasisFunction(int i, int p, float t, const std::vector<float>& knots);
+    glm::vec3 CalculateBsplineSurfacePoint(float u, float v);
 
-    float CalculateBasisFunction(int i, int p, float t, const std::vector<float>& knotVector);
-    glm::vec3 CalculateBSplineSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPointsU, const std::vector<std::vector<glm::vec3>>& controlPointsV, const std::vector<float>& knotVectorU, const std::vector<float>& knotVectorV);
-
-
+    std::vector<float> knotVectorU;
+    std::vector<float> knotVectorV;
+    int degreeU;
+    int degreeV;
 };
 
 

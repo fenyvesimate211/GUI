@@ -1,60 +1,69 @@
 #include "surface.h"
-
+#include <algorithm>
+BsplineSurface::BsplineSurface() : Surface() {
+	degreeU = 3;
+	degreeV = 3;
+	int knotCountU = controlPoints.size() + degreeU + 1;
+	int knotCountV = controlPoints[0].size() + degreeV + 1;
+	knotVectorU.resize(knotCountU);
+	knotVectorV.resize(knotCountV);
+	for (int i = 0; i < knotCountU; i++)
+		knotVectorU[i] = float(i) / (knotCountU - 1);
+	for (int j = 0; j < knotCountV; j++)
+		knotVectorV[j] = float(j) / (knotCountV - 1);
+}
 void BsplineSurface::CalculateSurfacePoints() {
-    for (int i = 0; i <= resolutionU; ++i) {
-        float u = static_cast<float>(i) / static_cast<float>(resolutionU);
-
-        for (int j = 0; j <= resolutionV; ++j) {
-            float v = static_cast<float>(j) / static_cast<float>(resolutionV);
-
-            std::vector<float> knotVectorU = { 0, 0, 0, 0, 0, 1, 1, 1, 1, 1 };
-            std::vector<float> knotVectorV = { 0, 0, 0, 0, 0, 1, 1, 1, 1, 1 };
-
-            surfacePoints[i][j] = CalculateBSplineSurfacePoint(u, v, controlPoints, controlPoints, knotVectorU, knotVectorV);
-        }
-    }
+	for (int uIndex = 0; uIndex <= resolutionU; uIndex++) {
+		float u = float(uIndex) / resolutionU;
+		for (int vIndex = 0; vIndex <= resolutionV; vIndex++) {
+			float v = float(vIndex) / resolutionV;
+			glm::vec3 point(0.0f, 0.0f, 0.0f);
+			float weightSum = 0.0f;
+			for (int i = 0; i < controlPoints.size(); i++) {
+				for (int j = 0; j < controlPoints[i].size(); j++) {
+					float basisU = BasisFunction(i, degreeU, u, knotVectorU);
+					float basisV = BasisFunction(j, degreeV, v, knotVectorV);
+					float weight = basisU * basisV;
+					point += controlPoints[i][j] * weight;
+					weightSum += weight;
+				}
+			}
+			if (weightSum != 0.0f) {
+				point /= weightSum;
+			}
+			surfacePoints[uIndex][vIndex] = point;
+		}
+	}
+}
+float BsplineSurface::BasisFunction(int i, int p, float t, const std::vector<float>& knots) {
+	if (p == 0) { return (knots[i] <= t && t < knots[i + 1]) ? 1.0f : 0.0f; }
+	float left = 0.0f;
+	float right = 0.0f;
+	float leftDenominator = knots[i + p] - knots[i];
+	if (leftDenominator != 0.0f) {
+		left = (t - knots[i]) / leftDenominator * BasisFunction(i, p - 1, t, knots);
+	}
+	float rightDenominator = knots[i + p + 1] - knots[i + 1];
+	if (rightDenominator != 0.0f) {
+		right = (knots[i + p + 1] - t) / rightDenominator * BasisFunction(i + 1, p - 1, t, knots);
+	}
+	return left + right;
 }
 
-float BsplineSurface::CalculateBasisFunction(int i, int p, float t, const std::vector<float>& knotVector) {
-    if (p == 0) {
-        if (knotVector[i] <= t && t <= knotVector[i + 1]) {
-            return 1.0f;
-        }
-        else {
-            return 0.0f;
-        }
-    }
-
-    float basis1 = 0.0f;
-    float basis2 = 0.0f;
-
-    if (knotVector[i + p] - knotVector[i] != 0.0f) {
-        basis1 = (t - knotVector[i]) / (knotVector[i + p] - knotVector[i]) * CalculateBasisFunction(i, p - 1, t, knotVector);
-    }
-
-    if (knotVector[i + p + 1] - knotVector[i + 1] != 0.0f) {
-        basis2 = (knotVector[i + p + 1] - t) / (knotVector[i + p + 1] - knotVector[i + 1]) * CalculateBasisFunction(i + 1, p - 1, t, knotVector);
-    }
-
-    return basis1 + basis2;
-}
-
-glm::vec3 BsplineSurface::CalculateBSplineSurfacePoint(float u, float v, const std::vector<std::vector<glm::vec3>>& controlPointsU, const std::vector<std::vector<glm::vec3>>& controlPointsV, const std::vector<float>& knotVectorU, const std::vector<float>& knotVectorV) {
-    int n = controlPointsU.size() - 1;
-    int m = controlPointsV[0].size() - 1;
-
-    int pU = controlPointsU.size() - 1;
-    int pV = controlPointsV[0].size() - 1;
-
-    glm::vec3 point(0.0f, 0.0f, 0.0f);
-
-    for (int i = 0; i <= n; ++i) {
-        for (int j = 0; j <= m; ++j) {
-            float basisU = CalculateBasisFunction(i, pU, u, knotVectorU);
-            float basisV = CalculateBasisFunction(j, pV, v, knotVectorV);
-            point += basisU * basisV * controlPointsV[i][j];
-        }
-    }
-
-    return point;
+glm::vec3 BsplineSurface::CalculateBsplineSurfacePoint(float u, float v) {
+	glm::vec3 point(0.0f, 0.0f, 0.0f);
+	float weightSum = 0.0f;
+	for (int i = 0; i < controlPoints.size(); i++) {
+		for (int j = 0; j < controlPoints[i].size(); j++) {
+			float basisU = BasisFunction(i, degreeU, u, knotVectorU);
+			float basisV = BasisFunction(j, degreeV, v, knotVectorV);
+			float weight = basisU * basisV;
+			point += controlPoints[i][j] * weight;
+			weightSum += weight;
+		}
+	}
+	if (weightSum != 0.0f) {
+		point /= weightSum;
+	}
+	return point;
 }
