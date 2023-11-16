@@ -76,7 +76,9 @@ int main() {
     Surface* nurbsSurface = new NURBSSurface();
 
     Surface* surface = bezierSurface;
-    
+
+    int controlPointsSizeU = surface->controlPoints.size();
+    int controlPointsSizeV = surface->controlPoints[0].size();
 
     // Geometry of triangle
 
@@ -99,12 +101,12 @@ int main() {
 
     // Geometry of control points
 
-    std::vector<glm::vec3> controlPoints2(surface->controlPoints.size() * surface->controlPoints[0].size());
-    for (int i = 0; i < 4; i++)
+    std::vector<glm::vec3> controlPoints2;
+    for (int i = 0; i < controlPointsSizeU; i++)
     {
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < controlPointsSizeV; j++)
         {
-            controlPoints2[i * 4 + j] = surface->controlPoints[i][j];
+            controlPoints2.push_back(surface->controlPoints[i][j]);
         }
     }
 
@@ -116,6 +118,39 @@ int main() {
     glGenBuffers(1, &cp_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, cp_vbo);
     glBufferData(GL_ARRAY_BUFFER, controlPoints2.size() * sizeof(glm::vec3), &controlPoints2[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindVertexArray(0);
+    glDisableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Geometry of control grid
+
+    std::vector<glm::vec3> controlGrid;
+    for (int i = 0; i < controlPointsSizeU; i++)
+    {
+        for (int j = 0; j < controlPointsSizeV; j++)
+        {
+            if (i != controlPointsSizeU - 1) {
+                controlGrid.push_back(surface->controlPoints[i][j]);
+                controlGrid.push_back(surface->controlPoints[i+1][j]);
+            }
+            if (j != controlPointsSizeV - 1) {
+                controlGrid.push_back(surface->controlPoints[i][j]);
+                controlGrid.push_back(surface->controlPoints[i][j+1]);
+            }
+        }
+    }
+
+    GLuint cg_vao;
+    glGenVertexArrays(1, &cg_vao);
+    glBindVertexArray(cg_vao);
+
+    GLuint cg_vbo;
+    glGenBuffers(1, &cg_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, cg_vbo);
+    glBufferData(GL_ARRAY_BUFFER, controlGrid.size() * sizeof(glm::vec3), &controlGrid[0], GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -224,8 +259,8 @@ int main() {
         ImGui::Text("V:       ");
         ImGui::SameLine();
         ImGui::InputInt("##V", &selectedPointV);
-        selectedPointU = glm::clamp(selectedPointU, 0, (int)surface->controlPoints.size() - 1);
-        selectedPointV = glm::clamp(selectedPointV, 0, (int)surface->controlPoints[0].size() - 1);
+        selectedPointU = glm::clamp(selectedPointU, 0, controlPointsSizeU - 1);
+        selectedPointV = glm::clamp(selectedPointV, 0, controlPointsSizeV - 1);
         glm::vec3 selectedPoint = surface->controlPoints[selectedPointU][selectedPointV];
         ImGui::Text("Position:");
         ImGui::SameLine();
@@ -238,6 +273,8 @@ int main() {
         ImGui::SeparatorText("Details");
         static bool render_controlPoints = true;
         ImGui::Checkbox("Control points", &render_controlPoints);
+        static bool render_controlGrid = true;
+        ImGui::Checkbox("Control grid", &render_controlGrid);
         static bool render_surface = true;
         ImGui::Checkbox("Surface##2", &render_surface);
         static bool render_triangle = true;
@@ -250,16 +287,40 @@ int main() {
             surface->CalculateSurfacePoints();
 
         // Geometry of control points
-        for (int i = 0; i < surface->controlPoints.size(); i++)
+        controlPoints2.clear();
+        for (int i = 0; i < controlPointsSizeU; i++)
         {
-            for (int j = 0; j < surface->controlPoints[0].size(); j++)
+            for (int j = 0; j < controlPointsSizeV; j++)
             {
-                controlPoints2[i * surface->controlPoints.size() + j] = surface->controlPoints[i][j];
+                controlPoints2.push_back(surface->controlPoints[i][j]);
             }
         }
         glBindVertexArray(cp_vao);
         glBindBuffer(GL_ARRAY_BUFFER, cp_vbo);
         glBufferData(GL_ARRAY_BUFFER, controlPoints2.size() * sizeof(glm::vec3), &controlPoints2[0], GL_STATIC_DRAW);
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // Geometry of control grid
+
+        controlGrid.clear();
+        for (int i = 0; i < controlPointsSizeU; i++)
+        {
+            for (int j = 0; j < controlPointsSizeV; j++)
+            {
+                if (i != controlPointsSizeU - 1) {
+                    controlGrid.push_back(surface->controlPoints[i][j]);
+                    controlGrid.push_back(surface->controlPoints[i + 1][j]);
+                }
+                if (j != controlPointsSizeV - 1) {
+                    controlGrid.push_back(surface->controlPoints[i][j]);
+                    controlGrid.push_back(surface->controlPoints[i][j + 1]);
+                }
+            }
+        }
+        glBindVertexArray(cg_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, cg_vbo);
+        glBufferData(GL_ARRAY_BUFFER, controlGrid.size() * sizeof(glm::vec3), &controlGrid[0], GL_STATIC_DRAW);
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -334,9 +395,21 @@ int main() {
         if (render_controlPoints)
         {
             trinagleShader->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
+            trinagleShader->SetSelectedPoint(selectedPoint);
+            trinagleShader->SetSelectedColor(glm::vec3(1.0f, 0.0f, 1.0f));
             trinagleShader->EnableShader();
             glBindVertexArray(cp_vao);
             glDrawArrays(GL_POINTS, 0, controlPoints2.size());
+            trinagleShader->DisableShader();
+        }
+
+        // control grid
+        if (render_controlGrid)
+        {
+            trinagleShader->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
+            trinagleShader->EnableShader();
+            glBindVertexArray(cg_vao);
+            glDrawArrays(GL_LINES, 0, controlGrid.size());
             trinagleShader->DisableShader();
         }
 
