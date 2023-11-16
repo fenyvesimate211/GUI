@@ -13,6 +13,14 @@ BsplineSurface::BsplineSurface() : Surface() {
 		knotVectorV[j] = float(j) / (knotCountV - 1);
 }
 void BsplineSurface::CalculateSurfacePoints() {
+
+	// resize
+	surfacePoints.resize(resolutionU + 1);
+	for (int i = 0; i < surfacePoints.size(); i++)
+	{
+		surfacePoints[i].resize(resolutionV + 1);
+	}
+
 	for (int uIndex = 0; uIndex <= resolutionU; uIndex++) {
 		float u = float(uIndex) / resolutionU;
 		for (int vIndex = 0; vIndex <= resolutionV; vIndex++) {
@@ -33,6 +41,15 @@ void BsplineSurface::CalculateSurfacePoints() {
 			}
 			surfacePoints[uIndex][vIndex] = point;
 		}
+	}
+
+	// cut the edge
+	surfacePoints.erase(surfacePoints.begin());
+	surfacePoints.pop_back();
+	for (int i = 0; i < surfacePoints.size(); i++)
+	{
+		surfacePoints[i].erase(surfacePoints[i].begin());
+		surfacePoints[i].pop_back();
 	}
 }
 float BsplineSurface::BasisFunction(int i, int p, float t, const std::vector<float>& knots) {

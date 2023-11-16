@@ -162,9 +162,9 @@ int main() {
 
     std::vector<glm::vec3> surfacePoints2;
     std::vector<glm::vec3> normals;
-    for (int i = 0; i < surface->resolutionU; i++)
+    for (int i = 0; i < surface->surfacePoints.size() - 1; i++)
     {
-        for (int j = 0; j < surface->resolutionV; j++)
+        for (int j = 0; j < surface->surfacePoints[0].size() - 1; j++)
         {
             glm::vec3 v1 = surface->surfacePoints[i][j];
             glm::vec3 v2 = surface->surfacePoints[i + 1][j];
@@ -328,9 +328,9 @@ int main() {
         
         surfacePoints2.clear();
         normals.clear();
-        for (int i = 0; i < surface->resolutionU; i++)
+        for (int i = 0; i < surface->surfacePoints.size() - 1; i++)
         {
-            for (int j = 0; j < surface->resolutionV; j++)
+            for (int j = 0; j < surface->surfacePoints[0].size() - 1; j++)
             {
                 glm::vec3 v1 = surface->surfacePoints[i][j];
                 glm::vec3 v2 = surface->surfacePoints[i + 1][j];
@@ -416,7 +416,7 @@ int main() {
         // surface points
         if (render_surface)
         {
-            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
+            //aglPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
             phongShader->SetMVP(MVP);
             phongShader->SetLightPosition(glm::vec3(2.0, 2.0, 5.0)); //glm::vec3(2.0, 2.0, 5.0)
             phongShader->SetViewPos(camera->cameraPosition);
