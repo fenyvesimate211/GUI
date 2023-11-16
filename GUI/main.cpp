@@ -277,7 +277,9 @@ int main() {
         ImGui::Checkbox("Control grid", &render_controlGrid);
         static bool render_surface = true;
         ImGui::Checkbox("Surface##2", &render_surface);
-        static bool render_triangle = true;
+        static bool wireframe_mode = false;
+        ImGui::Checkbox("Wireframe mode", &wireframe_mode);
+        static bool render_triangle = false;
         ImGui::Checkbox("Hello Triagle", &render_triangle);
         ImGui::SetItemTooltip("For nostalgic effects");
         ImGui::End();
@@ -416,7 +418,8 @@ int main() {
         // surface points
         if (render_surface)
         {
-            //aglPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
+            if (wireframe_mode)
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // glPolygonMode for wireframe inspection
             phongShader->SetMVP(MVP);
             phongShader->SetLightPosition(glm::vec3(2.0, 2.0, 5.0)); //glm::vec3(2.0, 2.0, 5.0)
             phongShader->SetViewPos(camera->cameraPosition);
@@ -425,7 +428,8 @@ int main() {
             glBindVertexArray(sp_vao);
             glDrawArrays(GL_TRIANGLES, 0, surfacePoints2.size());
             phongShader->DisableShader();
-            //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            if (wireframe_mode)
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
         // GUI
